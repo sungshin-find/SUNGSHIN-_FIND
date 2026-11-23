@@ -2,6 +2,8 @@ from rest_framework import permissions, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from notifications.services import notify_matches
+
 from .choices import Category, Color, Location, PostStatus, PostType
 from .matching import update_matches
 from .models import Match, Post
@@ -41,13 +43,15 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
-        # 등록하자마자 반대 유형 게시물과 매칭 점수 계산 (#21)
+        # 등록하자마자 반대 유형 게시물과 매칭 점수 계산 (#21) -> 70점 이상이면 알림 (#22)
         update_matches(post)
+        notify_matches(post)
 
     def perform_update(self, serializer):
         post = serializer.save()
         # 종류·색상·장소·날짜가 바뀌면 점수도 달라지므로 다시 계산
         update_matches(post)
+        notify_matches(post)
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
     def matches(self, request, pk=None):

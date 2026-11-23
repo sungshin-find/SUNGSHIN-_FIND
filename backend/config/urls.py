@@ -8,4 +8,5 @@ urlpatterns = [
     path('api/health', health_check, name='health-check'),
     path('api/', include('posts.urls')),
     path('api/users/', include('users.urls')),
+    path('api/', include('notifications.urls')),
 ]
