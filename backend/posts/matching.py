@@ -69,18 +69,21 @@ class MatchResult:
 
 
 def _category_score(lost, found):
+    # '기타'는 "어떤 종류인지 모름"이라는 뜻이라, 둘 다 '기타'여도 같은 종류로 보지 않는다
+    # 그래서 같은 값인지 비교하기 전에 '기타' 여부를 먼저 확인한다 (#21 리뷰 반영)
+    if Category.ETC in (lost.category, found.category):
+        return CATEGORY_ETC, '종류 확인 필요 (기타 포함)'
     if lost.category == found.category:
         return CATEGORY_SAME, f'같은 종류 ({lost.get_category_display()})'
-    if Category.ETC in (lost.category, found.category):
-        return CATEGORY_ETC, '종류 일부 일치 (기타 포함)'
     return None, None  # 종류가 다르면 같은 물건일 수 없음
 
 
 def _color_score(lost, found):
-    if lost.color == found.color:
-        return COLOR_SAME, f'같은 색상 ({lost.get_color_display()})'
+    # 종류와 같은 이유로 '기타'를 먼저 확인
     if Color.ETC in (lost.color, found.color):
         return COLOR_ETC, '색상 확인 필요 (기타 포함)'
+    if lost.color == found.color:
+        return COLOR_SAME, f'같은 색상 ({lost.get_color_display()})'
     if any(lost.color in group and found.color in group for group in COLOR_GROUPS):
         return COLOR_SIMILAR, f'비슷한 색상 ({lost.get_color_display()}·{found.get_color_display()})'
     return 0, None
@@ -162,19 +165,45 @@ def find_candidates(post):
 
 def update_matches(post):
     """
-    post 의 매칭 결과를 다시 계산해서 Match 테이블에 저장한다.
+    post 의 매칭 결과를 다시 계산해서 Match 테이블과 맞춘다.
     게시물 등록·수정 때, 그리고 반환완료 처리(#23) 때 호출한다.
-    반환: 새로 만들어진 Match 목록 (#22 알림에서 사용)
+
+    - 이미 있던 매칭이 그대로 유지되면 점수·근거만 갱신 (새 매칭으로 치지 않음)
+    - 더 이상 후보가 아닌 매칭은 삭제
+    - 처음 생긴 매칭만 새로 만든다
+
+    반환: 이번에 "처음" 생긴 Match 목록 (#22 알림에서 사용)
+          → 제목·설명만 수정했을 때 같은 사람에게 알림이 중복으로 가지 않음 (#21 리뷰 반영)
     """
+    from django.db import transaction
+    from django.db.models import Q
+
     from .models import Match
 
-    Match.objects.filter(lost=post).delete()
-    Match.objects.filter(found=post).delete()
+    with transaction.atomic():
+        existing = {
+            (m.lost_id, m.found_id): m
+            for m in Match.objects.filter(Q(lost=post) | Q(found=post))
+        }
 
-    created = []
-    for other, result in find_candidates(post):
-        lost, found = (post, other) if post.post_type == PostType.LOST else (other, post)
-        created.append(
-            Match.objects.create(lost=lost, found=found, score=result.score, reasons=result.reasons)
-        )
+        created = []
+        for other, result in find_candidates(post):
+            lost, found = (post, other) if post.post_type == PostType.LOST else (other, post)
+            match = existing.pop((lost.id, found.id), None)
+
+            if match is None:
+                created.append(
+                    Match.objects.create(
+                        lost=lost, found=found, score=result.score, reasons=result.reasons
+                    )
+                )
+            elif match.score != result.score or match.reasons != result.reasons:
+                match.score = result.score
+                match.reasons = result.reasons
+                match.save(update_fields=['score', 'reasons'])
+
+        # 남은 것 = 재계산 결과에 없는 매칭 → 삭제
+        if existing:
+            Match.objects.filter(pk__in=[m.pk for m in existing.values()]).delete()
+
     return created

@@ -32,7 +32,9 @@ class PostViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(post_type=post_type)
 
         # 마이페이지용 "내 게시물"
-        if self.request.query_params.get('mine') == 'true' and self.request.user.is_authenticated:
+        if self.request.query_params.get('mine') == 'true':
+            if not self.request.user.is_authenticated:
+                return queryset.none()  # 로그인 안 했으면 "내 글"이 없으므로 빈 목록
             queryset = queryset.filter(author=self.request.user)
 
         return queryset

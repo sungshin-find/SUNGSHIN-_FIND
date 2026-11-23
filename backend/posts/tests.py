@@ -94,6 +94,21 @@ def test_list_filter_by_type(api_client, user):
 
 
 @pytest.mark.django_db
+def test_mine_filter(api_client, user, other_user):
+    make_post(user)
+    make_post(other_user)
+
+    # 비로그인: "내 글"이 없으므로 빈 목록 (전체 목록이 나오면 안 됨)
+    response = api_client.get(reverse('post-list'), {'mine': 'true'})
+    assert response.status_code == 200
+    assert response.data == []
+
+    api_client.force_authenticate(user)
+    response = api_client.get(reverse('post-list'), {'mine': 'true'})
+    assert [p['author'] for p in response.data] == ['yuri']
+
+
+@pytest.mark.django_db
 def test_only_author_can_update(api_client, user, other_user):
     post = make_post(user)
     url = reverse('post-detail', args=[post.id])

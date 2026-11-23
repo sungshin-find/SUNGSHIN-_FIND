@@ -48,6 +48,16 @@ def test_etc_category_gets_partial_score():
     assert result.score == 15 + 25 + 20 + 15
 
 
+def test_both_etc_is_not_treated_as_same():
+    # 둘 다 '기타'면 "같은 종류/색"이 아니라 "확인 필요" 부분 점수만 받아야 함
+    result = score_pair(
+        fake('LOST', category='ETC', color='ETC'),
+        fake('FOUND', category='ETC', color='ETC'),
+    )
+    assert result.score == 15 + 8 + 20 + 15
+    assert not any('같은 종류' in r or '같은 색상' in r for r in result.reasons)
+
+
 def test_similar_color_gets_partial_score():
     same = score_pair(fake('LOST', color='BLACK'), fake('FOUND', color='BLACK')).score
     similar = score_pair(fake('LOST', color='BLACK'), fake('FOUND', color='NAVY')).score
@@ -151,6 +161,36 @@ def test_recalculation_replaces_old_matches(users):
     lost.save()
     update_matches(lost)
     assert Match.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_recalculation_returns_only_new_matches(users):
+    # 제목만 수정하는 경우: 같은 매칭이 "새 매칭"으로 다시 잡히면 알림이 중복됨
+    loser, finder = users
+    lost = make_post(loser, 'LOST')
+    make_post(finder, 'FOUND')
+
+    first = update_matches(lost)
+    match_id = first[0].id
+
+    lost.title = '제목만 수정'
+    lost.save()
+    assert update_matches(lost) == []                 # 새로 생긴 매칭 없음
+    assert Match.objects.get().id == match_id         # 기존 행이 그대로 유지
+
+
+@pytest.mark.django_db
+def test_recalculation_updates_score_without_new_match(users):
+    loser, finder = users
+    lost = make_post(loser, 'LOST', color='BLACK')
+    make_post(finder, 'FOUND', color='BLACK')
+    update_matches(lost)
+    assert Match.objects.get().score == 100
+
+    lost.color = 'NAVY'  # 비슷한 색으로 수정 -> 점수만 바뀜
+    lost.save()
+    assert update_matches(lost) == []
+    assert Match.objects.get().score == 100 - 25 + 12
 
 
 @pytest.mark.django_db
