@@ -44,3 +44,27 @@ class Post(models.Model):
 
     def __str__(self):
         return f'[{self.get_post_type_display()}] {self.title}'
+
+
+class Match(models.Model):
+    """분실물 ↔ 습득물 매칭 후보 (#21). 점수 계산은 posts/matching.py"""
+
+    lost = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='matches_as_lost', verbose_name='분실물'
+    )
+    found = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name='matches_as_found', verbose_name='습득물'
+    )
+    score = models.PositiveSmallIntegerField('매칭 점수')
+    # 점수 근거 예: ["같은 종류 (지갑) +40", "같은 색상 (검정) +25"]
+    reasons = models.JSONField('점수 근거', default=list)
+    created_at = models.DateTimeField('계산 시각', auto_now_add=True)
+
+    class Meta:
+        ordering = ['-score', '-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['lost', 'found'], name='unique_lost_found_match'),
+        ]
+
+    def __str__(self):
+        return f'{self.lost_id} ↔ {self.found_id} ({self.score}점)'

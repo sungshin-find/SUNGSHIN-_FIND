@@ -47,3 +47,11 @@ class PostSerializer(serializers.ModelSerializer):
         if value > timezone.localdate():
             raise serializers.ValidationError('분실/습득 날짜는 오늘 이후일 수 없어요.')
         return value
+
+
+class MatchCandidateSerializer(serializers.Serializer):
+    """게시물 상세 화면의 "비슷한 게시물" 목록 한 줄 (#21)"""
+
+    post = PostSerializer(read_only=True)
+    score = serializers.IntegerField(read_only=True)
+    reasons = serializers.ListField(child=serializers.CharField(), read_only=True)
