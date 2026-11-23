@@ -1,38 +1,35 @@
-import { useEffect, useState } from "react";
-import { getHealth } from "./api/client";
-import "./App.css";
+import { Route, Routes } from "react-router";
+import { RequireAuth } from "./auth/RequireAuth";
+import { AuthLayout } from "./components/AuthLayout";
+import { Layout } from "./components/Layout";
+import { LoginPage } from "./pages/LoginPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
+import { PostDetailPage } from "./pages/PostDetailPage";
+import { PostFormPage } from "./pages/PostFormPage";
+import { PostListPage } from "./pages/PostListPage";
+import { SignupPage } from "./pages/SignupPage";
 
-function App() {
-  const [status, setStatus] = useState("loading");
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    getHealth()
-      .then((json) => {
-        setData(json);
-        setStatus("ok");
-      })
-      .catch((err) => {
-        setError(err.message);
-        setStatus("error");
-      });
-  }, []);
-
+// 주소(URL) ↔ 화면 연결표
+export default function App() {
   return (
-    <main className="health">
-      <h1>SUNGSHIN FIND</h1>
-      <h2>백엔드 상태</h2>
-      {status === "loading" && <p>확인 중...</p>}
-      {status === "ok" && (
-        <>
-          <p className="ok">✅ 연결됨</p>
-          <pre>{JSON.stringify(data, null, 2)}</pre>
-        </>
-      )}
-      {status === "error" && <p className="error">❌ 연결 실패: {error}</p>}
-    </main>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<PostListPage />} />
+        <Route
+          path="posts/new"
+          element={
+            <RequireAuth>
+              <PostFormPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="posts/:id" element={<PostDetailPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+      <Route element={<AuthLayout />}>
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
+      </Route>
+    </Routes>
   );
 }
-
-export default App;
