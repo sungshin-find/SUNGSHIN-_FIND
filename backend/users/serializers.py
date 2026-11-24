@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 User = get_user_model()
@@ -14,14 +15,17 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'nickname', 'password', 'password_confirm', 'created_at']
         read_only_fields = ['id', 'created_at']
 
-    def validate_password(self, value):
-        # Django 기본 비밀번호 정책(길이, 숫자 전용 방지, 유사도 등) 검증
-        validate_password(value)
-        return value
-
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': '비밀번호가 일치하지 않습니다.'})
+
+        # 사용자 정보(email, nickname)와 비밀번호 간 유사도 검증을 위해 임시 User 객체 전달
+        user = User(email=attrs.get('email', ''), nickname=attrs.get('nickname', ''))
+        try:
+            validate_password(attrs['password'], user=user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError({'password': list(e.messages)})
+
         return attrs
 
     def create(self, validated_data):

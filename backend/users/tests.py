@@ -78,3 +78,22 @@ def test_signup_duplicate_email(client):
 
     assert response.status_code == 400
     assert 'email' in response.json()
+
+@pytest.mark.django_db
+def test_signup_duplicate_nickname(client):
+    User.objects.create_user(
+        email='existing@sungshin.ac.kr',
+        nickname='중복닉네임',
+        password='StrongPassword123!',
+    )
+    url = reverse('user-signup')
+    payload = {
+        'email': 'new@sungshin.ac.kr',
+        'nickname': '중복닉네임',
+        'password': 'StrongPassword123!',
+        'password_confirm': 'StrongPassword123!',
+    }
+    response = client.post(url, data=payload, content_type='application/json')
+
+    assert response.status_code == 400
+    assert 'nickname' in response.json()

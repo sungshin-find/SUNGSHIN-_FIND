@@ -3,7 +3,6 @@ from django.db import models
 
 class UserManager(BaseUserManager):
     def create_user(self, email=None, password=None, username=None, **extra_fields):
-        # 기존 테스트 코드(create_user(username='yuri', ...))와의 하위 호환성 지원
         if not email and username:
             email = f'{username}@sungshin.ac.kr'
         if not email:
