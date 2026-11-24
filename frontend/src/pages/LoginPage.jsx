@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { errorMessage } from "../api/errors";
+import { ApiError, errorMessage } from "../api/errors";
 import { useAuth } from "../auth/useAuth";
 import { TextField } from "../components/TextField";
 import { SCHOOL_DOMAIN, toSchoolEmail } from "../utils/email";
@@ -25,7 +25,9 @@ export function LoginPage() {
       await login(toSchoolEmail(emailId), password);
       navigate(location.state?.from ?? "/", { replace: true });
     } catch (err) {
-      setError(errorMessage(err, "이메일 또는 비밀번호가 맞지 않아요."));
+      // 로그인 실패(400/401)는 서버 문구가 영어일 수 있어 우리 문구로 통일
+      const wrongInput = err instanceof ApiError && (err.status === 400 || err.status === 401);
+      setError(wrongInput ? "이메일 또는 비밀번호가 맞지 않아요." : errorMessage(err));
     } finally {
       setSubmitting(false);
     }

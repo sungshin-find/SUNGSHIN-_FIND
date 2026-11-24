@@ -32,9 +32,11 @@ const EMPTY_TEXT = {
 };
 
 export function PostListPage() {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const type = searchParams.get("type") ?? "";
+  const rawType = searchParams.get("type") ?? "";
+  // 주소에 이상한 값이 오거나, 로그아웃했는데 "내 게시물"이면 전체로 보여줌
+  const type = TYPES.some((t) => t.key === rawType) && !(rawType === "mine" && ready && !user) ? rawType : "";
 
   const [posts, setPosts] = useState([]);
   const [choices, setChoices] = useState(null);
@@ -83,7 +85,7 @@ export function PostListPage() {
         (!category || p.category === category) &&
         (!location || p.location === location) &&
         (!since || p.event_date >= since) && // 같은 형식의 날짜 문자열이라 크기 비교 가능
-        (!word || `${p.title} ${p.location_detail} ${p.description}`.toLowerCase().includes(word)),
+        (!word || `${p.title} ${p.location_detail ?? ""} ${p.description ?? ""}`.toLowerCase().includes(word)),
     );
   }, [posts, category, location, since, keyword]);
 

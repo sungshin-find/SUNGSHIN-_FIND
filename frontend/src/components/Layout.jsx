@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { Link, Outlet } from "react-router";
 import { useAuth } from "../auth/useAuth";
+import { displayName } from "../utils/user";
 import { Logo } from "./Logo";
 import "../styles/layout.css";
 
@@ -21,9 +22,9 @@ export function Layout() {
             {user ? (
               <div className="account-pill">
                 <span className="account-pill__avatar" aria-hidden>
-                  {user.nickname.slice(0, 1)}
+                  {displayName(user).slice(0, 1)}
                 </span>
-                <span className="account-pill__name">{user.nickname}</span>
+                <span className="account-pill__name">{displayName(user)}</span>
                 <button type="button" className="account-pill__logout" onClick={logout}>
                   로그아웃
                 </button>

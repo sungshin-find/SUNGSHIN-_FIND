@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as authApi from "../api/auth";
+import { SESSION_EXPIRED_EVENT } from "../api/client";
+import { ApiError } from "../api/errors";
 import { tokenStore } from "../api/token";
 import { AuthContext } from "./AuthContext";
 
@@ -14,8 +16,18 @@ export function AuthProvider({ children }) {
     authApi
       .getMe()
       .then(setUser)
-      .catch(() => tokenStore.clear()) // 토큰 만료 등 → 로그아웃 상태로
+      .catch((err) => {
+        // 토큰이 만료(401)됐을 때만 지움. 서버가 잠깐 꺼진 경우엔 토큰을 남겨서 다음에 다시 시도
+        if (err instanceof ApiError && err.status === 401) tokenStore.clear();
+      })
       .finally(() => setReady(true));
+  }, []);
+
+  // 사용 중 토큰이 만료되면(client.js 에서 신호) 화면도 로그아웃 상태로
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
   }, []);
 
   const login = useCallback(async (email, password) => {

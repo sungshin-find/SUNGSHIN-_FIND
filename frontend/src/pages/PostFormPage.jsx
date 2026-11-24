@@ -1,6 +1,6 @@
 import { PackageOpen, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { errorMessage, fieldErrors } from "../api/errors";
 import { createPost, getPostChoices } from "../api/posts";
 import { CategoryIcon } from "../components/CategoryIcon";
@@ -16,6 +16,7 @@ const COPY = {
 
 export function PostFormPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
 
   const [choices, setChoices] = useState(null);
@@ -57,6 +58,12 @@ export function PostFormPage() {
       setNotice(Object.keys(byField).length ? "입력한 내용을 다시 확인해 주세요." : errorMessage(err));
       setSubmitting(false);
     }
+  }
+
+  // 주소창에 직접 입력해 들어온 경우엔 "뒤로" 갈 곳이 없으므로 목록으로 보냄
+  function cancel() {
+    if (location.key === "default") navigate("/");
+    else navigate(-1);
   }
 
   const ready = form.title.trim() && form.category && form.color && form.location && form.event_date;
@@ -152,7 +159,7 @@ export function PostFormPage() {
         </div>
 
         <div className="form__actions">
-          <button type="button" className="btn btn--outline" onClick={() => navigate(-1)}>
+          <button type="button" className="btn btn--outline" onClick={cancel}>
             취소
           </button>
           <button className="btn btn--primary" disabled={submitting || !ready}>

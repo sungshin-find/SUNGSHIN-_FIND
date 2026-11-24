@@ -141,7 +141,7 @@ export function PostDetailPage() {
         <aside className="summary-card">
           <div className="summary-card__author">
             <span className="account-pill__avatar" aria-hidden>
-              {post.author.slice(0, 1)}
+              {(post.author || "?").slice(0, 1)}
             </span>
             <span>
               <strong>{post.author}</strong>

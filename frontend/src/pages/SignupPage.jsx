@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import * as authApi from "../api/auth";
 import { errorMessage, fieldErrors } from "../api/errors";
@@ -6,6 +6,7 @@ import { TextField } from "../components/TextField";
 import { SCHOOL_DOMAIN, isSchoolEmail, toSchoolEmail } from "../utils/email";
 
 const STEPS = ["메일 인증", "코드 확인", "정보 입력"];
+const RESEND_SECONDS = 30; // 코드 재발송 대기 시간 (메일 폭탄 방지)
 const STEP_TITLES = ["학교 메일을 인증해 주세요", "메일로 받은 코드를 입력해 주세요", "거의 다 됐어요"];
 
 // 회원가입은 3단계: 1) 학교 메일로 코드 받기 → 2) 코드 확인 → 3) 닉네임·비밀번호 입력
@@ -20,6 +21,14 @@ export function SignupPage() {
   const [notice, setNotice] = useState(""); // 상단 에러
   const [info, setInfo] = useState(""); // 상단 안내
   const [submitting, setSubmitting] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // 남은 재발송 대기 초
+
+  // 1초마다 대기 시간 줄이기
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const email = toSchoolEmail(emailId);
 
@@ -48,6 +57,7 @@ export function SignupPage() {
     }
     run(async () => {
       await authApi.sendEmailCode(email);
+      setCooldown(RESEND_SECONDS);
       setCode("");
       setStep(1);
       setInfo(`${email} 로 인증 코드를 보냈어요.`);
