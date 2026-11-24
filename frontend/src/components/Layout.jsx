@@ -1,5 +1,7 @@
-import { Link, NavLink, Outlet } from "react-router";
+import { Plus } from "lucide-react";
+import { Link, Outlet } from "react-router";
 import { useAuth } from "../auth/useAuth";
+import { Logo } from "./Logo";
 import "../styles/layout.css";
 
 // 로그인 후 보는 화면들의 공통 틀 (상단바 + 본문)
@@ -10,33 +12,33 @@ export function Layout() {
     <div className="shell">
       <header className="topbar">
         <div className="topbar__inner">
-          <Link to="/" className="wordmark">
-            성신 파인드
-          </Link>
-          <nav className="topbar__nav" aria-label="주요 메뉴">
-            <NavLink to="/" end>
-              게시물
-            </NavLink>
-          </nav>
-          <div className="topbar__account">
+          <Logo />
+          <nav className="topbar__account" aria-label="계정">
+            <Link to="/posts/new" className="btn btn--ghost topbar__write">
+              <Plus size={16} aria-hidden />
+              물건 등록
+            </Link>
             {user ? (
-              <>
-                <span className="topbar__name">{user.nickname}</span>
-                <button type="button" className="btn btn--quiet" onClick={logout}>
+              <div className="account-pill">
+                <span className="account-pill__avatar" aria-hidden>
+                  {user.nickname.slice(0, 1)}
+                </span>
+                <span className="account-pill__name">{user.nickname}</span>
+                <button type="button" className="account-pill__logout" onClick={logout}>
                   로그아웃
                 </button>
-              </>
+              </div>
             ) : (
               <>
-                <Link to="/login" className="btn btn--quiet">
+                <Link to="/login" className="btn btn--ghost">
                   로그인
                 </Link>
-                <Link to="/signup" className="btn btn--primary btn--sm">
+                <Link to="/signup" className="btn btn--outline btn--sm topbar__signup">
                   회원가입
                 </Link>
               </>
             )}
-          </div>
+          </nav>
         </div>
       </header>
       <main className="page">

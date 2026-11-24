@@ -1,7 +1,9 @@
+import { PackageOpen, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { errorMessage, fieldErrors } from "../api/errors";
 import { createPost, getPostChoices } from "../api/posts";
+import { CategoryIcon } from "../components/CategoryIcon";
 import { SelectField } from "../components/SelectField";
 import { TextField } from "../components/TextField";
 import { todayInputValue } from "../utils/date";
@@ -61,7 +63,7 @@ export function PostFormPage() {
 
   return (
     <section className="post-form">
-      <h1 className="page__title">게시물 등록</h1>
+      <h1 className="page__title">물건 등록</h1>
       <p className="page__lead">종류·색상·장소를 정확히 고를수록 비슷한 글을 잘 찾아줘요.</p>
 
       {notice && (
@@ -71,19 +73,38 @@ export function PostFormPage() {
       )}
 
       <form className="form" onSubmit={handleSubmit} noValidate>
-        <fieldset className="type-switch">
-          <legend className="field__label">어떤 글인가요?</legend>
-          {[
-            ["LOST", "물건을 잃어버렸어요"],
-            ["FOUND", "물건을 주웠어요"],
-          ].map(([value, text]) => (
-            <label key={value} className={`type-switch__option type-switch__option--${value.toLowerCase()}`}>
-              <input type="radio" name="post_type" value={value} checked={form.post_type === value} onChange={update("post_type")} />
-              {text}
-            </label>
-          ))}
+        <fieldset className="form-section">
+          <legend className="form-section__title">어떤 글인가요?</legend>
+          <div className="option-grid option-grid--2">
+            {[
+              ["LOST", "물건을 잃어버렸어요", "주운 사람이 볼 수 있게 올려요", Search],
+              ["FOUND", "물건을 주웠어요", "주인이 찾을 수 있게 올려요", PackageOpen],
+            ].map(([value, title, desc, Icon]) => (
+              <label key={value} className={`option option--big option--${value.toLowerCase()}`}>
+                <input type="radio" name="post_type" value={value} checked={form.post_type === value} onChange={update("post_type")} />
+                <Icon size={28} strokeWidth={1.5} aria-hidden />
+                <span className="option__title">{title}</span>
+                <span className="option__desc">{desc}</span>
+              </label>
+            ))}
+          </div>
         </fieldset>
 
+        <fieldset className="form-section">
+          <legend className="form-section__title">어떤 물건인가요?</legend>
+          {errors.category && <p className="field__error">{errors.category}</p>}
+          <div className="option-grid">
+            {(choices?.category ?? []).map((c) => (
+              <label key={c.value} className="option">
+                <input type="radio" name="category" value={c.value} checked={form.category === c.value} onChange={update("category")} />
+                <CategoryIcon category={c.value} size={28} strokeWidth={1.5} />
+                <span className="option__title">{c.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <h2 className="form-section__title">자세한 정보</h2>
         <TextField
           label="제목"
           placeholder={form.post_type === "LOST" ? "예: 검정 반지갑 잃어버렸어요" : "예: 수정관에서 에어팟 케이스 주웠어요"}
@@ -94,7 +115,6 @@ export function PostFormPage() {
         />
 
         <div className="form__grid">
-          <SelectField label="물건 종류" options={choices?.category ?? []} value={form.category} onChange={update("category")} error={errors.category} />
           <SelectField label="색상" options={choices?.color ?? []} value={form.color} onChange={update("color")} error={errors.color} />
           <SelectField label={copy.place} options={choices?.location ?? []} value={form.location} onChange={update("location")} error={errors.location} />
           <TextField

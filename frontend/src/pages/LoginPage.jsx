@@ -33,40 +33,43 @@ export function LoginPage() {
 
   return (
     <>
-      <h1 className="auth__title">로그인</h1>
-      {justSignedUp && <p className="notice notice--ok">가입이 끝났어요. 방금 만든 계정으로 로그인해 주세요.</p>}
-      {error && (
-        <p className="notice notice--error" role="alert">
-          {error}
+      <h1 className="auth-card__head">로그인</h1>
+      <div className="auth-card__body">
+        <h2 className="auth__title">성신 파인드에 오신 걸 환영해요</h2>
+        {justSignedUp && <p className="notice notice--ok">가입이 끝났어요. 방금 만든 계정으로 로그인해 주세요.</p>}
+        {error && (
+          <p className="notice notice--error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <form className="form" onSubmit={handleSubmit} noValidate>
+          <TextField
+            label="학교 메일"
+            value={emailId}
+            onChange={(e) => setEmailId(e.target.value)}
+            suffix={emailId.includes("@") ? null : SCHOOL_DOMAIN}
+            autoComplete="username"
+            autoFocus
+            required
+          />
+          <TextField
+            label="비밀번호"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+          <button className="btn btn--primary btn--block" disabled={submitting || !emailId || !password}>
+            {submitting ? "로그인하는 중…" : "로그인"}
+          </button>
+        </form>
+
+        <p className="auth__switch">
+          아직 계정이 없나요? <Link to="/signup">회원가입</Link>
         </p>
-      )}
-
-      <form className="form" onSubmit={handleSubmit} noValidate>
-        <TextField
-          label="학교 메일"
-          value={emailId}
-          onChange={(e) => setEmailId(e.target.value)}
-          suffix={emailId.includes("@") ? null : SCHOOL_DOMAIN}
-          autoComplete="username"
-          autoFocus
-          required
-        />
-        <TextField
-          label="비밀번호"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          required
-        />
-        <button className="btn btn--primary btn--block" disabled={submitting || !emailId || !password}>
-          {submitting ? "로그인하는 중…" : "로그인"}
-        </button>
-      </form>
-
-      <p className="auth__switch">
-        아직 계정이 없나요? <Link to="/signup">회원가입</Link>
-      </p>
+      </div>
     </>
   );
 }

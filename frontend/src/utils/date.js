@@ -11,3 +11,11 @@ export function todayInputValue() {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+// n일 전 날짜를 YYYY-MM-DD 로 (기간 필터용, 이벤트 핸들러 안에서만 호출)
+export function daysAgoInputValue(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const pad = (v) => String(v).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}

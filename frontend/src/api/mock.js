@@ -19,13 +19,13 @@ const publicUser = ({ id, email, nickname }) => ({ id, email, nickname });
 const routes = [
   ["GET", /^\/api\/health$/, () => ({ status: "ok", mock: true })],
 
-  ["POST", /^\/api\/users\/email\/send\/$/, ({ body }) => {
+  ["POST", /^\/api\/users\/email\/send-code\/$/, ({ body }) => {
     if (!body.email?.endsWith("@sungshin.ac.kr")) fail(400, { email: ["성신여대 메일만 쓸 수 있어요."] });
     if (db.users.some((u) => u.email === body.email)) fail(400, { email: ["이미 가입된 메일이에요."] });
     return { detail: "인증 코드를 보냈어요." };
   }],
 
-  ["POST", /^\/api\/users\/email\/verify\/$/, ({ body }) => {
+  ["POST", /^\/api\/users\/email\/verify-code\/$/, ({ body }) => {
     if (body.code !== MOCK_CODE) fail(400, { code: ["인증 코드가 맞지 않아요."] });
     db.verified.add(body.email);
     return { detail: "인증되었어요." };

@@ -1,29 +1,41 @@
 /* ───── 디자인 토큰: 색·글꼴·간격은 여기서만 정하고 나머지는 변수로 가져다 씀 ───── */
 :root {
-  --violet-900: #2a1b47; /* 소개 패널 배경 */
-  --violet-700: #4e2e8c; /* 메인 버튼, 링크 */
-  --violet-800: #3f2373; /* 메인 버튼 눌렀을 때 */
-  --violet-100: #ece7f5; /* 연한 강조 배경 */
-  --violet-50: #f6f4fa;
+  /* 연보라 */
+  --lilac-600: #7b5ce6; /* 메인 버튼·링크 (흰 글씨 대비 4.6:1) */
+  --lilac-700: #6544d4; /* 눌렀을 때 */
+  --lilac-300: #b9a5f5;
+  --lilac-200: #ddd2fc; /* 테두리·선택 표시 */
+  --lilac-100: #efe9fe; /* 연한 배경 */
+  --lilac-50: #f8f5ff;
 
-  --bg: #f7f6fa; /* 페이지 바탕 */
-  --surface: #ffffff;
-  --line: #dcd7e6;
-  --text: #1f1a2b;
-  --text-sub: #645d73;
+  /* 무채색: 흰 바탕 + 진한 회색 글씨 */
+  --bg: #ffffff;
+  --surface-2: #f7f7f7;
+  --line: #e4e4e4;
+  --line-strong: #c9c9c9;
+  --text: #222222;
+  --text-sub: #6a6a6a;
 
-  --lost: var(--violet-700); /* 분실물 */
-  --found: #2e7a5a; /* 습득물 */
-  --found-bg: #e4f2ea;
-  --danger: #b3261e;
-  --danger-bg: #fbeceb;
-  --ok-bg: #e9f4ee;
+  --lost: var(--lilac-600);
+  --lost-bg: var(--lilac-100);
+  --found: #23805e;
+  --found-bg: #e3f4ec;
+  --danger: #c13515;
+  --danger-bg: #fdf0ec;
+  --ok: #1f6f4f;
+  --ok-bg: #e9f5ef;
 
   --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 14px;
-  --focus: 0 0 0 3px rgba(78, 46, 140, 0.28);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --focus: 0 0 0 2px #fff, 0 0 0 4px var(--text);
 }
 
 *,
@@ -36,7 +48,7 @@ body {
   margin: 0;
   font-family: var(--font);
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -50,12 +62,13 @@ p,
 dl,
 dd,
 ol,
-ul {
+ul,
+fieldset {
   margin: 0;
 }
 
 a {
-  color: var(--violet-700);
+  color: inherit;
 }
 
 button,
@@ -74,7 +87,6 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
-    animation: none !important;
   }
 }
 
@@ -83,61 +95,66 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 18px;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
   border: 1px solid transparent;
-  border-radius: var(--radius);
-  font-weight: 600;
-  font-size: 15px;
-  text-decoration: none;
-  cursor: pointer;
+  border-radius: var(--radius-sm);
   background: none;
-  transition: background-color 0.15s;
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    transform 0.1s;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 .btn:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.4;
 }
 .btn--primary {
-  background: var(--violet-700);
+  background: var(--lilac-600);
   color: #fff;
 }
 .btn--primary:hover:not(:disabled) {
-  background: var(--violet-800);
+  background: var(--lilac-700);
 }
 .btn--outline {
-  border-color: var(--line);
-  background: var(--surface);
-  color: var(--text);
+  border-color: var(--text);
+  background: var(--bg);
 }
 .btn--outline:hover:not(:disabled) {
-  border-color: var(--violet-700);
+  background: var(--surface-2);
 }
 .btn--danger {
-  border-color: #e7c3c0;
-  background: var(--surface);
+  border-color: var(--line-strong);
   color: var(--danger);
 }
-.btn--quiet {
-  color: var(--text-sub);
-  padding: 0 10px;
+.btn--ghost {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
 }
-.btn--quiet:hover {
-  color: var(--text);
+.btn--ghost:hover {
+  background: var(--surface-2);
 }
 .btn--text {
   min-height: 32px;
   padding: 0;
-  color: var(--violet-700);
-  font-weight: 500;
-}
-.btn--text:hover:not(:disabled) {
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .btn--sm {
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 40px;
+  padding: 0 16px;
   font-size: 14px;
 }
 .btn--block {
@@ -148,7 +165,7 @@ textarea {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 .form__row {
   display: flex;
@@ -168,22 +185,23 @@ textarea {
 .field__control {
   display: flex;
   align-items: center;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
   transition: border-color 0.15s;
 }
 .field__control:focus-within {
-  border-color: var(--violet-700);
-  box-shadow: var(--focus);
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--text);
 }
 .field--error .field__control {
   border-color: var(--danger);
+  background: var(--danger-bg);
 }
 .field__input {
   flex: 1;
   min-width: 0;
-  height: 46px;
+  height: 52px;
   padding: 0 14px;
   border: 0;
   background: transparent;
@@ -199,15 +217,15 @@ textarea {
 }
 textarea.field__input {
   height: auto;
-  min-height: 120px;
-  padding: 12px 14px;
+  min-height: 140px;
+  padding: 14px;
   resize: vertical;
 }
 select.field__input {
   appearance: none;
-  padding-right: 36px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%23645d73' stroke-width='1.6'/%3E%3C/svg%3E")
-    no-repeat right 14px center;
+  padding-right: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%23222' stroke-width='1.6'/%3E%3C/svg%3E")
+    no-repeat right 16px center;
 }
 .field__suffix {
   padding-right: 14px;
@@ -225,9 +243,9 @@ select.field__input {
 
 /* ───── 알림 문구 ───── */
 .notice {
-  margin-bottom: 18px;
-  padding: 12px 14px;
-  border-radius: var(--radius);
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
 }
 .notice--error {
@@ -236,16 +254,26 @@ select.field__input {
 }
 .notice--ok {
   background: var(--ok-bg);
-  color: #1f5c40;
+  color: var(--ok);
 }
 
-.wordmark {
+/* ───── 로고 ───── */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lilac-600);
   font-weight: 800;
-  font-size: 19px;
-  letter-spacing: -0.02em;
-  color: var(--violet-700);
+  font-size: 20px;
+  letter-spacing: -0.03em;
   text-decoration: none;
 }
-.wordmark--light {
+.logo__mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--lilac-600);
   color: #fff;
 }
