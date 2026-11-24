@@ -17,6 +17,11 @@ export function PostDetailPage() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // 비슷한 게시물 카드를 눌러 다른 게시물로 오면 맨 위부터 보이게
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
   useEffect(() => {
     let ignore = false;
     // 게시물과 매칭 후보를 동시에 요청
@@ -35,11 +40,13 @@ export function PostDetailPage() {
   }, [id]);
 
   async function handleDelete() {
+    if (deleting) return; // 두 번 눌러 삭제 요청이 중복으로 가는 것 방지
     if (!window.confirm("이 게시물을 삭제할까요? 삭제하면 되돌릴 수 없어요.")) return;
+    setError("");
     setDeleting(true);
     try {
       await deletePost(id);
-      navigate("/", { replace: true });
+      navigate(`/?type=${post.post_type}`, { replace: true }); // 삭제한 글이 있던 목록으로
     } catch (err) {
       setError(errorMessage(err, "삭제하지 못했어요."));
       setDeleting(false);

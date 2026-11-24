@@ -93,6 +93,9 @@ export function PostListPage() {
   }
 
   function changeType(key) {
+    // 이미 선택된 탭을 다시 누르면 type 이 그대로라 목록을 다시 불러오지 않음
+    // → 여기서 "불러오는 중"으로 바꾸면 그 상태에 멈추므로 아무것도 하지 않음
+    if (key === type) return;
     setStatus("loading");
     setSearchParams(key ? { type: key } : {});
   }
