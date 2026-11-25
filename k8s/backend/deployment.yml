@@ -43,6 +43,42 @@ spec:
                   name: backend-secret
                   key: SECRET_KEY
                   optional: true
+            - name: EMAIL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: EMAIL_HOST
+                  optional: true
+            - name: EMAIL_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: EMAIL_PORT
+                  optional: true
+            - name: EMAIL_USE_TLS
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: EMAIL_USE_TLS
+                  optional: true
+            - name: EMAIL_HOST_USER
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: EMAIL_HOST_USER
+                  optional: true
+            - name: EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: EMAIL_HOST_PASSWORD
+                  optional: true
+            - name: DEFAULT_FROM_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: DEFAULT_FROM_EMAIL
+                  optional: true
           resources:
             requests:
               cpu: "100m"

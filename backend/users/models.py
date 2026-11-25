@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+import random
+from datetime import timedelta
+from django.utils import timezone
 
 class UserManager(BaseUserManager):
     def create_user(self, email=None, password=None, username=None, **extra_fields):
@@ -44,3 +47,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def username(self):
         return self.nickname
+
+class EmailVerification(models.Model):
+    email = models.EmailField(unique=True)
+    code = models.CharField(max_length=6)
+    is_verified = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def create_or_update_code(cls, email, expire_minutes=5):
+        code = f'{random.randint(0, 999999):06d}'
+        expires_at = timezone.now() + timedelta(minutes=expire_minutes)
+        obj, _ = cls.objects.update_or_create(
+            email=email,
+            defaults={
+                'code': code,
+                'is_verified': False,
+                'expires_at': expires_at,
+            },
+        )
+        return obj
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f'{self.email} ({self.code})'
