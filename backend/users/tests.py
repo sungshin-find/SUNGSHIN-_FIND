@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from django.urls import reverse
 from django.utils import timezone
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import EmailVerification
 
@@ -213,3 +214,92 @@ def client_post_json(url, payload):
     from django.test import Client
 
     return Client().post(url, data=payload, content_type='application/json')
+
+@pytest.mark.django_db
+def test_jwt_login_and_refresh_success():
+    User.objects.create_user(
+        email='jwtuser@sungshin.ac.kr',
+        nickname='토큰수룡',
+        password='StrongPassword123!',
+    )
+    from django.test import Client
+
+    client = Client()
+
+    # 1. 로그인 (access, refresh 토큰 발급 확인)
+    login_url = reverse('user-login')
+    login_res = client.post(
+        login_url,
+        data={'email': 'jwtuser@sungshin.ac.kr', 'password': 'StrongPassword123!'},
+        content_type='application/json',
+    )
+    assert login_res.status_code == 200
+    tokens = login_res.json()
+    assert 'access' in tokens
+    assert 'refresh' in tokens
+
+    # 2. 토큰 갱신 (새 access 토큰 발급 확인)
+    refresh_url = reverse('user-token-refresh')
+    refresh_res = client.post(
+        refresh_url,
+        data={'refresh': tokens['refresh']},
+        content_type='application/json',
+    )
+    assert refresh_res.status_code == 200
+    assert 'access' in refresh_res.json()
+
+
+@pytest.mark.django_db
+def test_jwt_login_invalid_credentials():
+    User.objects.create_user(
+        email='jwtuser2@sungshin.ac.kr',
+        nickname='토큰수룡2',
+        password='StrongPassword123!',
+    )
+    response = client_post_json(
+        reverse('user-login'),
+        {'email': 'jwtuser2@sungshin.ac.kr', 'password': 'WrongPassword!'},
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_post_create_requires_jwt_authentication():
+    from django.test import Client
+
+    client = Client()
+    posts_url = '/api/posts/'
+    post_payload = {
+        'post_type': 'LOST',
+        'title': '지갑 분실했습니다',
+        'content': '성신관 3층에서 잃어버렸어요',
+        'category': 'WALLET',
+        'color': 'BLACK',
+        'location': 'SUNGSHIN',
+        'event_date': '2026-11-25',
+    }
+
+    # 1. 비로그인(토큰 없음) 상태 게시물 작성 -> 401 또는 403 차단 확인
+    unauth_res = client.post(posts_url, data=post_payload, content_type='application/json')
+    assert unauth_res.status_code in (401, 403)
+
+    # 2. 로그인 후 Bearer 토큰 포함하여 게시물 작성 -> 201 성공 확인
+    User.objects.create_user(
+        email='poster@sungshin.ac.kr',
+        nickname='작성자수룡',
+        password='StrongPassword123!',
+    )
+    login_res = client.post(
+        reverse('user-login'),
+        data={'email': 'poster@sungshin.ac.kr', 'password': 'StrongPassword123!'},
+        content_type='application/json',
+    )
+    access_token = login_res.json()['access']
+
+    auth_res = client.post(
+        posts_url,
+        data=post_payload,
+        content_type='application/json',
+        HTTP_AUTHORIZATION=f'Bearer {access_token}',
+    )
+    assert auth_res.status_code == 201
