@@ -148,3 +148,87 @@ def test_choices_endpoint(api_client):
     assert response.status_code == 200
     assert {'value': 'WALLET', 'label': '지갑'} in response.data['category']
     assert {'value': 'SUNGSHIN', 'label': '성신관'} in response.data['location']
+
+@pytest.mark.django_db
+def test_search_and_filters(api_client, user):
+    today = timezone.localdate()
+    yesterday = today - datetime.timedelta(days=1)
+
+    p1 = make_post(
+        user,
+        title='검정 카드지갑 잃어버렸어요',
+        category='WALLET',
+        location='SUNGSHIN',
+        location_detail='성신관 302호',
+        description='학생증이 들어있어요',
+        event_date=str(yesterday),
+    )
+    make_post(
+        user,
+        title='흰색 에어팟 주웠습니다',
+        category='EARPHONE',
+        location='SUJEONG',
+        location_detail='수정관 로비',
+        description='케이스만 있어요',
+        event_date=str(today),
+    )
+
+    # 1. 키워드 검색 (제목 / 상세 설명 / 상세 장소)
+    res_q = api_client.get(reverse('post-list'), {'q': '학생증'})
+    assert res_q.status_code == 200
+    assert [item['id'] for item in res_q.data] == [p1.id]
+
+    # 2. 종류 + 장소 + 단일 날짜 복합 필터
+    res_filter = api_client.get(
+        reverse('post-list'),
+        {
+            'category': 'WALLET',
+            'location': 'SUNGSHIN',
+            'date': str(yesterday),
+        },
+    )
+    assert res_filter.status_code == 200
+    assert [item['id'] for item in res_filter.data] == [p1.id]
+
+    # 3. 날짜 범위 필터 (date_from ~ date_to)
+    res_range = api_client.get(
+        reverse('post-list'),
+        {'date_from': str(today), 'date_to': str(today)},
+    )
+    assert res_range.status_code == 200
+    assert len(res_range.data) == 1
+    assert res_range.data[0]['category'] == 'EARPHONE'
+
+
+@pytest.mark.django_db
+def test_status_change_and_match_exclusion(api_client, user, other_user):
+    from .matching import update_matches
+    from .models import Match
+
+    lost_post = make_post(user, post_type='LOST', category='WALLET', color='BLACK', location='SUNGSHIN')
+    found_post = make_post(other_user, post_type='FOUND', category='WALLET', color='BLACK', location='SUNGSHIN')
+    update_matches(found_post)
+    assert Match.objects.filter(lost=lost_post, found=found_post).exists()
+
+    status_url = reverse('post-update-status', args=[found_post.id])
+
+    # 1. 비로그인 차단 (401)
+    assert api_client.patch(status_url, {'status': 'RETURNED'}, format='json').status_code == 401
+
+    # 2. 작성자가 아닌 사용자 차단 (403)
+    api_client.force_authenticate(user)
+    assert api_client.patch(status_url, {'status': 'RETURNED'}, format='json').status_code == 403
+
+    # 3. 작성자가 반환완료(RETURNED)로 변경 -> 200 & 매칭 후보에서 즉시 제외
+    api_client.force_authenticate(other_user)
+    res_returned = api_client.patch(status_url, {'status': 'RETURNED'}, format='json')
+    assert res_returned.status_code == 200
+    assert res_returned.data['status'] == 'RETURNED'
+    assert res_returned.data['status_display'] == '반환완료'
+    assert not Match.objects.filter(lost=lost_post, found=found_post).exists()
+
+    # 4. 다시 진행중/보관중(OPEN)으로 복구 -> 매칭 재성립
+    res_open = api_client.patch(status_url, {'status': 'OPEN'}, format='json')
+    assert res_open.status_code == 200
+    assert res_open.data['status'] == 'OPEN'
+    assert Match.objects.filter(lost=lost_post, found=found_post).exists()
