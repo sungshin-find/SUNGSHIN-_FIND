@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Post
+from .choices import PostStatus
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -48,6 +49,10 @@ class PostSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('분실/습득 날짜는 오늘 이후일 수 없어요.')
         return value
 
+class PostStatusSerializer(serializers.Serializer):
+    """게시물 상태 변경 요청 (#23): OPEN(보관중/찾는중) <-> RETURNED(반환완료)"""
+
+    status = serializers.ChoiceField(choices=PostStatus.choices)
 
 class MatchCandidateSerializer(serializers.Serializer):
     """게시물 상세 화면의 "비슷한 게시물" 목록 한 줄 (#21)"""
